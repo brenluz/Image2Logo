@@ -8,16 +8,16 @@ let pg;
 //randoms
 let randomTile = Array(num).fill(0.5), randomEllipse = 0.5, randomRotateTriangle = 0.5, randomRotateSingleSideTriangle = 0.5, randomRotateSingleTriangle = 0.5, randomRotateEllipse = 0.5, randomShuffleArray = 0.5;
 
-let input;
-
 let webcam;
 let webcamHeight = 210;
 let webcamWidth = 280;
-let lastSmile = 0;
 let canvasHeight= 400;
-
 const socket = new WebSocket('wss://image2logo-b2a51e3b7966.herokuapp.com:443');
 
+
+function preload(){
+    webcam = loadImage("../Backend/smile_detected.jpg");
+}
 function setup() {
 
     socket.addEventListener('open', () => {
@@ -26,16 +26,18 @@ function setup() {
     socket.addEventListener('message', (event) => {
         const data = JSON.parse(event.data);
         if (data.detected){
-            updatePG()
+            updatePG(data.image)
         }
+        webcam = loadImage("../Backend/smile_detected.jpg");
     })
     createCanvas(window.innerWidth, window.innerHeight);
 
-    textAlign(CENTER)
+    textAlign(CENTER);
+    textStyle(NORMAL);
 
-    webcam = createCapture(VIDEO)
-    webcam.loop()
-    webcam.hide()
+    // webcam = createCapture(VIDEO)
+    // webcam.loop()
+    // webcam.hide()
 
     noStroke();
     strokeCap(SQUARE);
@@ -60,9 +62,17 @@ function setupPG() {
 }
 
 function draw() {
-    renderWebcam(webcam, webcamWidth, webcamHeight);
+    push();
+    translate(width,0);
+    scale(-1, 1);
 
-    renderText("Sorria para tirar uma foto", window.innerWidth/8, window.innerHeight*0.2);
+    imageMode(CENTER);
+    image(webcam, window.innerWidth/2,webcamHeight/2 + window.innerHeight*0.01, webcamWidth, webcamHeight);
+    pop();
+
+    renderText("Sorria para ver sua foto ->", window.innerWidth/8, window.innerHeight*0.2);
+    renderText("IMAGE2LOGO", window.innerWidth*0.45, window.innerHeight*0.9);
+    renderText("© Todos os direitos reservados - Laboratorio ICON\n" + "Codigo original por Francisco Barretto", window.innerWidth*0.02, window.innerHeight*0.9, window.innerWidth*0.010);
 }
 
 function createGrid() {
@@ -227,20 +237,12 @@ function drawEllipseTile(x,y,size, pos, color) {
 
 }
 
-function renderWebcam(webcam, webcamWidth, webcamHeight) {
-    push();
-    translate(width,0);
-    scale(-1, 1);
-    imageMode(CENTER);
-    image(webcam, window.innerWidth/2,webcamHeight/2 + window.innerHeight*0.01, webcamWidth, webcamHeight);
-    pop();
-}
-
-function renderText(info, x, y) {
+function renderText(info, x, y, size = 30) {
+    textFont()
     push();
     smooth();
     fill(255);
-    textSize(30);
+    textSize(size);
     text(info, x, y);
     pop();
 }

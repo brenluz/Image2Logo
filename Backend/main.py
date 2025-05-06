@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import json
 import logging
 import queue
@@ -10,7 +11,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger('smile_detector')
 
 message_queue = queue.Queue()
-
+message_sent_event = asyncio.Event()
 WEBSOCKET_URI = 'wss://image2logo-b2a51e3b7966.herokuapp.com:443'
 
 cap = cv.VideoCapture(4, cv.CAP_DSHOW)
@@ -82,30 +83,34 @@ def websocket_sender_thread():
 websocket_thread = threading.Thread(target=websocket_sender_thread, daemon=True)
 websocket_thread.start()
 
+def image_to_base64(image):
+    _, buffer = cv.imencode('.jpg', image)
+    return base64.b64encode(buffer).decode('utf-8')
 
 def detect_bounding_box(vid):
     gray_image = cv.cvtColor(vid, cv.COLOR_BGR2GRAY)
-    rostos = face_classifier.detectMultiScale(gray_image, 1.3, 5, minSize=(40, 40))
+    rostos = face_classifier.detectMultiScale(gray_image, 1.1, 5, minSize=(50, 50))
     Detectsmile = False
 
     for (x, y, w, h) in rostos:
         cv.rectangle(vid, (x, y), (x + w, y + h), (0, 255, 0), 4)
         roi_gray = gray_image[y:y + h, x:x + w]
         roi_color = vid[y:y + h, x:x + w]
-        smiles = smile_cascade.detectMultiScale(roi_gray, 2.8, 20)
+        smiles = smile_cascade.detectMultiScale(roi_gray, 1.7, 22, minSize=(25, 25))
 
         for (sx, sy, sw, sh) in smiles:
             cv.rectangle(roi_color, (sx, sy), ((sx + sw), (sy + sh)), (0, 0, 255), 2)
             if len(smiles) > 0 and smiles is not None:
                 Detectsmile = True
-                # # Send a message when a smile is detected
-
-
-
 
     return rostos, Detectsmile
 
 last_smile = False
+last_timestamp = 0
+
+window_name = "Image2Logo"
+cv.namedWindow(window_name, cv.WINDOW_NORMAL | cv.WINDOW_KEEPRATIO)
+
 while True:
 
     result, video_frame = cap.read()  # read frames from the video
@@ -119,25 +124,32 @@ while True:
     )  # apply the function we created to the video frame
 
     # Display status on the frame
-    print(smile_detected)
     status_text = "Smile Detected!" if smile_detected else "No Smile"
-
-    if smile_detected != last_smile:
+    timestamp = cv.getTickCount() / cv.getTickFrequency()
+    if smile_detected != last_smile and timestamp - last_timestamp > 1:
+        image_base64 = image_to_base64(video_frame)
+        image_filename = "smile_detected.jpg"
+        cv.imwrite(image_filename, video_frame)
         last_smile = smile_detected
-        send_smile_message(
-            {
-                "event": "smile_status",
-                "timestamp": str(cv.getTickCount() / cv.getTickFrequency()),
-                "detected": smile_detected
-            }
-        )
+        last_timestamp = timestamp
+        if smile_detected:
+            send_smile_message(
+                {
+                    "event": "smile_status",
+                    "timestamp": str(timestamp),
+                    "detected": smile_detected,
+                    "image": image_base64
+                }
+            )
+
 
     cv.putText(video_frame, status_text, (10, 30), cv.FONT_HERSHEY_SIMPLEX, 0.7,
                (0, 0, 255) if smile_detected else (255, 0, 0), 2)
 
     cv.imshow(
-        "Image to Logo", video_frame
+        window_name, video_frame
     )  # display the processed frame in a window named "My Face Detection Project"
+    cv.setWindowProperty(window_name, cv.WND_PROP_TOPMOST, 1)
 
     if cv.waitKey(1) & 0xFF == ord("q"):
         break
