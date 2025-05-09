@@ -2,24 +2,24 @@ let grid = 1;
 let num = 3;
 let colors = ["#0ea9eb", "#fb6819", "#e70e75"];
 let baseColor = 84;
-let bg = "#000";
+let bg = "#1F1F1F";
 let pg;
-
 //randoms
 let randomTile = Array(num).fill(0.5), randomEllipse = 0.5, randomRotateTriangle = 0.5, randomRotateSingleSideTriangle = 0.5, randomRotateSingleTriangle = 0.5, randomRotateEllipse = 0.5, randomShuffleArray = 0.5;
-
+let font;
 let webcam;
-let webcamHeight = 210;
-let webcamWidth = 280;
+let webcamHeight = 285;
+let webcamWidth = 295;
 let canvasHeight= 400;
 const socket = new WebSocket('wss://image2logo-b2a51e3b7966.herokuapp.com:443');
 
 
 function preload(){
     webcam = loadImage("../Backend/smile_detected.jpg");
+    font = loadFont("fonts/Montserrat-Regular.ttf");
 }
 function setup() {
-
+    textFont(font)
     socket.addEventListener('open', () => {
         console.log('Connected to the WebSocket server');
     })
@@ -64,14 +64,13 @@ function setupPG() {
 function draw() {
     push();
     translate(width,0);
-    scale(-1, 1);
-
+    scale(-1,1)
     imageMode(CENTER);
-    image(webcam, window.innerWidth/2,webcamHeight/2 + window.innerHeight*0.01, webcamWidth, webcamHeight);
+    image(webcam, window.innerWidth/2,webcamHeight/2 + window.innerHeight*0.02, webcamWidth, webcamHeight);
     pop();
 
-    renderText("Sorria para ver sua foto ->", window.innerWidth/8, window.innerHeight*0.2);
-    renderText("IMAGE2LOGO", window.innerWidth*0.45, window.innerHeight*0.9);
+    renderText("Sorria para ver sua foto ->", window.innerWidth/10, window.innerHeight*0.2);
+    renderText("IMAGE2LOGO", window.innerWidth*0.42, window.innerHeight*0.9);
     renderText("© Todos os direitos reservados - Laboratorio ICON\n" + "Codigo original por Francisco Barretto", window.innerWidth*0.02, window.innerHeight*0.9, window.innerWidth*0.010);
 }
 

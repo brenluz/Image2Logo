@@ -7,8 +7,10 @@ import threading
 import cv2 as cv
 import websockets
 
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('smile_detector')
+logging.getLogger('googleapiclient.discovery_cache').setLevel(logging.ERROR)
 
 message_queue = queue.Queue()
 message_sent_event = asyncio.Event()
@@ -93,17 +95,18 @@ def detect_bounding_box(vid):
     Detectsmile = False
 
     for (x, y, w, h) in rostos:
-        cv.rectangle(vid, (x, y), (x + w, y + h), (0, 255, 0), 4)
+        # cv.rectangle(vid, (x, y), (x + w, y + h), (0, 255, 0), 4)
         roi_gray = gray_image[y:y + h, x:x + w]
         roi_color = vid[y:y + h, x:x + w]
         smiles = smile_cascade.detectMultiScale(roi_gray, 1.7, 22, minSize=(25, 25))
 
         for (sx, sy, sw, sh) in smiles:
-            cv.rectangle(roi_color, (sx, sy), ((sx + sw), (sy + sh)), (0, 0, 255), 2)
+            # cv.rectangle(roi_color, (sx, sy), ((sx + sw), (sy + sh)), (0, 0, 255), 2)
             if len(smiles) > 0 and smiles is not None:
                 Detectsmile = True
 
     return rostos, Detectsmile
+
 
 last_smile = False
 last_timestamp = 0
